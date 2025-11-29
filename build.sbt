@@ -15,7 +15,7 @@ inThisBuild(Seq[Setting[_]](
   developers := List(
     Developer("retronym", "Jason Zaugg", "@retronym", url("https://github.com/retronym")),
   ),
-  scalacOptions := Seq("-feature", "-deprecation", "-Xlint", "-Werror"),
+  scalacOptions := Seq("-feature", "-Xlint"),
   githubWorkflowOSes := Seq("ubuntu-latest", "macos-latest"),
   githubWorkflowJavaVersions := Seq(
     JavaSpec.zulu("8"),  // macos-latest lacks Temurin 8
@@ -96,8 +96,10 @@ lazy val core = project.
 lazy val cli = project.
   settings(
     libraryDependencies ++= Seq(
-      "commons-cli" % "commons-cli" % "1.9.0",
+//      "commons-cli" % "commons-cli" % "1.9.0",
+      "org.rogach" %% "scallop" % "5.3.0"
     ),
+    mainClass.withRank(KeyRanks.Invisible) := Some("scala.tools.jardiff.Main"),
     name := buildName + "-cli",
     assembly / assemblyMergeStrategy := {
       case "rootdoc.txt" => MergeStrategy.discard

@@ -4,14 +4,10 @@
 
 package scala.tools.jardiff
 
-import JDKCollectionConvertersCompat.Converters._
-import java.io.{ByteArrayOutputStream, File, PrintWriter}
+import java.io.File
 import java.nio.file._
 
-//import org.apache.commons.cli
-//import org.apache.commons.cli.{CommandLine, DefaultParser, HelpFormatter, Options}
 import org.eclipse.jgit.util.io.NullOutputStream
-import scala.util.Try
 import scala.util.control.NonFatal
 
 import org.rogach.scallop.ScallopConf
@@ -24,29 +20,6 @@ object Main {
       case Success(diffFound) => sys.exit(if (diffFound) 1 else 0)
     }
   }
-
-//  private object Opts {
-//    val Help = new cli.Option("h", "help", false, "Display this message")
-//    val Git = new cli.Option("g", "git", true, "Directory to output a git repository containing the diff")
-//    Git.setArgName("dir")
-//    val NoCode = new cli.Option("c", "suppress-code", false, "Suppress method bodies")
-//    val Raw = new cli.Option("r", "raw", false, "Disable sorting and filtering of classfile contents")
-//    val NoPrivates = new cli.Option("p", "suppress-privates", false, "Display only non-private members")
-//    val ContextLines = new cli.Option("U", "unified", true, "Number of context lines in diff")
-//    val Quiet = new cli.Option("q", "quiet", false, "Don't output diffs to standard out")
-//    val Ignore = new cli.Option("i", "ignore", true, "File pattern to ignore rendered files in gitignore format")
-//    Ignore.setArgs(cli.Option.UNLIMITED_VALUES)
-//    ContextLines.setArgName("n")
-//    def apply(): Options = {
-//      new cli.Options().addOption(Help).addOption(Git).addOption(ContextLines).addOption(NoCode).addOption(Raw).addOption(NoPrivates).addOption(Quiet).addOption(Ignore)
-//    }
-//  }
-//  private implicit class RichCommandLine(val self: CommandLine) {
-//    def has(o: cli.Option): Boolean = self.hasOption(o.getOpt)
-//    def get(o: cli.Option): String = self.getOptionValue(o.getOpt)
-//    def getOptInt(o: cli.Option): Option[Int] = Option(self.getOptionValue(o.getOpt)).map(x => Try(x.toInt).getOrElse(throw new cli.ParseException("--" + o.getLongOpt + " requires an integer")))
-//  }
-
   class Conf(args: Seq[String]) extends ScallopConf(args) {
     banner(s"""usage: jardiff [-c] [-g <dir>] [-h] [-i <arg>] [-p] [-q] [-r] [-U <n>] VERSION1 [VERSION2 ...]
 
@@ -62,35 +35,16 @@ Each VERSION may designate a single file, a directory, JAR file or a `${File.pat
     val Raw = opt[Boolean]("raw", short = 'r', descr = "Disable sorting and filtering of classfile contents")
     val ContextLines = opt[Int]("unified", short = 'U', descr = "Number of context lines in diff", argName = "n")
 
-    val versions = trailArg[List[String]](required = false)
+    val Versions = trailArg[List[String]](required = false)
     verify()
+//    mainOptions.map(x => x.shortNames)
   }
 
-  private def helpText: String = {
-    new Conf(Seq.empty).getFullHelpString()
-
-//    val formatter = new HelpFormatter
-//    val baos = new ByteArrayOutputStream()
-//    val writer = new PrintWriter(baos)
-//    try {
-//      val footer = s" VERSION1 [VERSION2 ...]\n\nEach VERSION may designate a single file, a directory, JAR file or a `${File.pathSeparator}`-delimited classpath\n\n"
-//      formatter.printHelp(writer, 80, "jardiff", footer, Opts(), HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, "", true)
-//      writer.flush()
-//      baos.toString().replaceFirst("\\n", "")
-//
-//    } finally {
-//      writer.close()
-//    }
-  }
+  private def helpText: String = new Conf(Seq.empty).helpFormatter.getFullHelpString()
 
   def run(args: Array[String]): RunResult = {
     val conf = new Conf(args)
-//    val parser = new DefaultParser
-
-//    conf.verify()
     try {
-//      val line = parser.parse(Opts(), args)
-//      val trailingArgs = line.getArgList
       if (conf.Help.isSupplied) {
         ShowUsage(helpText)
       } else {
@@ -100,8 +54,7 @@ Each VERSION may designate a single file, a directory, JAR file or a `${File.pat
           !conf.NoPrivates.isSupplied, conf.ContextLines.toOption, diffOutputStream,
           conf.Ignore.getOrElse(List.empty[String])
         )
-//        println(conf.versions.getOrElse(List.empty))
-        val paths = conf.versions.getOrElse(List.empty).map(JarDiff.expandClassPath)
+        val paths = conf.Versions.getOrElse(List.empty).map(JarDiff.expandClassPath)
         paths match {
           case Nil => ShowUsage(helpText)
           case _ =>
@@ -111,7 +64,6 @@ Each VERSION may designate a single file, a directory, JAR file or a `${File.pat
         }
       }
     } catch {
-//      case exp: cli.ParseException => ShowUsage(helpText)
       case NonFatal(t) => Error(t)
     }
   }
